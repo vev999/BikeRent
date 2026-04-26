@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import com.example.bikerent.data.util.ImageUtils
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.theme.Green800
 import com.example.bikerent.viewmodel.AppViewModel
@@ -68,7 +69,7 @@ fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 AsyncImage(
-                    model = shop.image, contentDescription = shop.name,
+                    model = ImageUtils.imageModel(shop.image), contentDescription = shop.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().height(250.dp)
                 )
@@ -112,7 +113,7 @@ fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel
                 ) {
                     Row(modifier = Modifier.height(120.dp)) {
                         AsyncImage(
-                            model = bike.image, contentDescription = bike.name,
+                            model = ImageUtils.imageModel(bike.image), contentDescription = bike.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.width(120.dp)
                                 .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.bikerent.data.Bike
+import com.example.bikerent.data.util.ImageUtils
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.components.BottomNavBar
 import com.example.bikerent.ui.theme.Green100
@@ -128,7 +129,7 @@ fun BikeCard(bike: Bike, onClick: () -> Unit) {
     ) {
         Column {
             AsyncImage(
-                model = bike.image, contentDescription = bike.name,
+                model = ImageUtils.imageModel(bike.image), contentDescription = bike.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth().height(200.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))

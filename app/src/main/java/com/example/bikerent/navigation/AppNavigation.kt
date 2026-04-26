@@ -15,6 +15,7 @@ import com.example.bikerent.ui.screens.AdminPanelScreen
 import com.example.bikerent.ui.screens.BikeDetailScreen
 import com.example.bikerent.ui.screens.HomeScreen
 import com.example.bikerent.ui.screens.LoginScreen
+import com.example.bikerent.ui.screens.MyReviewsScreen
 import com.example.bikerent.ui.screens.ProfileScreen
 import com.example.bikerent.ui.screens.RentalsScreen
 import com.example.bikerent.ui.screens.ShopProfileScreen
@@ -38,6 +39,7 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
     object Settings : Screen("settings")
     object Admin : Screen("admin")
+    object MyReviews : Screen("my_reviews")
 }
 
 @Composable
@@ -49,21 +51,18 @@ fun AppNavigation() {
         factory = AuthViewModelFactory(app.userRepository)
     )
     val appViewModel: AppViewModel = viewModel(
-        factory = AppViewModelFactory(app.bikeRepository, app.shopRepository, app.rentalRepository)
+        factory = AppViewModelFactory(app.bikeRepository, app.shopRepository, app.rentalRepository, app.reviewRepository)
     )
 
-    // When auth succeeds, load user data into AppViewModel
     val authState by authViewModel.authState.collectAsState()
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
-            appViewModel.initForUser((authState as AuthState.Success).userId)
+            val state = authState as AuthState.Success
+            appViewModel.initForUser(state.userId, state.name)
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Login.route
-    ) {
+    NavHost(navController = navController, startDestination = Screen.Login.route) {
         composable(Screen.Login.route) {
             LoginScreen(navController = navController, authViewModel = authViewModel)
         }
@@ -72,39 +71,26 @@ fun AppNavigation() {
         }
         composable(Screen.BikeDetail.route) { backStackEntry ->
             val bikeId = backStackEntry.arguments?.getString("bikeId") ?: return@composable
-            BikeDetailScreen(
-                navController = navController,
-                bikeId = bikeId,
-                appViewModel = appViewModel
-            )
+            BikeDetailScreen(navController = navController, bikeId = bikeId, appViewModel = appViewModel)
         }
         composable(Screen.ShopProfile.route) { backStackEntry ->
             val shopId = backStackEntry.arguments?.getString("shopId") ?: return@composable
-            ShopProfileScreen(
-                navController = navController,
-                shopId = shopId,
-                appViewModel = appViewModel
-            )
+            ShopProfileScreen(navController = navController, shopId = shopId, appViewModel = appViewModel)
         }
         composable(Screen.Rentals.route) {
             RentalsScreen(navController = navController, appViewModel = appViewModel)
         }
         composable(Screen.Profile.route) {
-            ProfileScreen(
-                navController = navController,
-                authViewModel = authViewModel,
-                appViewModel = appViewModel
-            )
+            ProfileScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
         }
         composable(Screen.Settings.route) {
-            UserSettingsScreen(
-                navController = navController,
-                authViewModel = authViewModel,
-                appViewModel = appViewModel
-            )
+            UserSettingsScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
         }
         composable(Screen.Admin.route) {
             AdminPanelScreen(navController = navController, appViewModel = appViewModel)
+        }
+        composable(Screen.MyReviews.route) {
+            MyReviewsScreen(navController = navController, appViewModel = appViewModel)
         }
     }
 }

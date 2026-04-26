@@ -2,6 +2,7 @@ package com.example.bikerent.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mail
@@ -67,7 +69,13 @@ fun UserSettingsScreen(
             contentPadding = PaddingValues(bottom = 16.dp)) {
             item {
                 Surface(color = Green800, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)) {
-                    Column(modifier = Modifier.padding(16.dp, 40.dp, 16.dp, 16.dp)) {
+                    Row(
+                        modifier = Modifier.padding(start = 4.dp, top = 40.dp, end = 16.dp, bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć", tint = Color.White)
+                        }
                         Text("Ustawienia konta", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -182,7 +190,7 @@ fun UserSettingsScreen(
                                         Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
                                             Text(rental.bikeName, fontWeight = FontWeight.SemiBold)
                                             Text(rental.shopName, color = Color(0xFF666666), fontSize = 13.sp)
-                                            Text("Czas: ${rental.startTime} - ${rental.endTime}", color = Color(0xFF666666), fontSize = 13.sp)
+                                            Text("od ${rental.startTime}", color = Color(0xFF666666), fontSize = 13.sp)
                                             Text("Zwrot: ${rental.returnLocation}", color = Color(0xFF666666), fontSize = 13.sp)
                                         }
                                     }

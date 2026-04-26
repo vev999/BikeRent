@@ -40,15 +40,32 @@ class RentalRepositoryImpl(
     override suspend fun returnBike(rentalId: String, bikePrice: Int, userId: Long) {
         val rental = activeRentalDao.getAllForUser(userId).find { it.id == rentalId } ?: return
         activeRentalDao.deleteById(rentalId)
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        val sdf = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+        val now = Date()
+        val returnTime = sdf.format(now)
+        val startDate = try { sdf.parse(rental.startTime) } catch (e: Exception) { null }
+        val durationMinutes = if (startDate != null) (now.time - startDate.time) / 60000L else 0L
+
+        val durationText = when {
+            durationMinutes < 1 -> "mniej niż 1 min"
+            durationMinutes < 60 -> "$durationMinutes min"
+            else -> {
+                val h = durationMinutes / 60
+                val m = durationMinutes % 60
+                if (m == 0L) "$h h" else "$h h $m min"
+            }
+        }
+        val billedHours = maxOf(1, ((durationMinutes + 59) / 60).toInt())
+
         rentalHistoryDao.insert(
             RentalHistoryEntity(
                 id = "h_${System.currentTimeMillis()}",
                 bikeName = rental.bikeName,
                 shopName = rental.shopName,
-                date = today,
-                duration = "4 godziny",
-                cost = bikePrice * 4,
+                date = "${rental.startTime} – $returnTime",
+                duration = durationText,
+                cost = bikePrice * billedHours,
                 userId = userId
             )
         )

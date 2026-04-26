@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
@@ -24,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,7 +58,13 @@ fun RentalsScreen(navController: NavController, appViewModel: AppViewModel) {
         ) {
             item {
                 Surface(color = Green800, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)) {
-                    Column(modifier = Modifier.padding(16.dp, 40.dp, 16.dp, 16.dp)) {
+                    Row(
+                        modifier = Modifier.padding(start = 4.dp, top = 40.dp, end = 16.dp, bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć", tint = Color.White)
+                        }
                         Text("Moje Wypożyczenia", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -142,7 +150,7 @@ private fun ActiveRentalCard(rental: ActiveRental, onReturn: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.AccessTime, null, tint = Green800, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("${rental.startTime} - ${rental.endTime}", color = Color(0xFF666666), fontSize = 14.sp)
+                Text("od ${rental.startTime}", color = Color(0xFF666666), fontSize = 14.sp)
             }
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

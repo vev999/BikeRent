@@ -3,6 +3,7 @@ package com.example.bikerent.ui.screens
 import android.media.AudioManager
 import android.media.ToneGenerator
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,8 +43,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,22 +61,37 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.bikerent.data.Review
+import com.example.bikerent.data.util.ImageUtils
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.theme.Green100
 import com.example.bikerent.ui.theme.Green800
 import com.example.bikerent.viewmodel.AppViewModel
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel: AppViewModel) {
     val bikes by appViewModel.bikes.collectAsState()
     val shops by appViewModel.shops.collectAsState()
+    val reviews by appViewModel.currentBikeReviews.collectAsState()
     val bike = bikes.find { it.id == bikeId } ?: return
     val shop = shops.find { it.id == bike.shopId }
 
     var showRentDialog by remember { mutableStateOf(false) }
     var rentSuccess by remember { mutableStateOf(false) }
     val pagerState = rememberPagerState { bike.images.size }
+
+    var reviewRating by remember { mutableFloatStateOf(0f) }
+    var reviewComment by remember { mutableStateOf("") }
+
+    val currentUserId = appViewModel.getCurrentUserId()
+    val hasReviewed = reviews.any { it.userId == currentUserId }
+    val avgRating = if (reviews.isEmpty()) 0f
+    else (reviews.map { it.rating }.average() * 10).roundToInt() / 10f
+
+    LaunchedEffect(bikeId) {
+        appViewModel.loadBikeReviews(bikeId)
+    }
 
     Scaffold(
         topBar = {
@@ -92,7 +111,7 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                 Box {
                     HorizontalPager(state = pagerState) { page ->
                         AsyncImage(
-                            model = bike.images[page], contentDescription = bike.name,
+                            model = ImageUtils.imageModel(bike.images[page]), contentDescription = bike.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxWidth().height(300.dp)
                         )
@@ -120,6 +139,7 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
 
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    // Info card
                     Card(shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(3.dp)) {
@@ -132,7 +152,8 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("${bike.rating} (${bike.reviews.size} opinii)", color = Color(0xFF666666))
+                                val ratingText = if (reviews.isEmpty()) "brak ocen" else "$avgRating (${reviews.size})"
+                                Text(ratingText, color = Color(0xFF666666))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text(bike.description, color = Color(0xFF666666), lineHeight = 22.sp)
@@ -188,18 +209,66 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
 
                     Spacer(Modifier.height(12.dp))
 
+                    // Add review card (hidden if already reviewed)
+                    if (!hasReviewed) {
+                        Card(shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(3.dp)) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Dodaj opinię", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(10.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    repeat(5) { index ->
+                                        Icon(
+                                            Icons.Filled.Star, contentDescription = "${index + 1} gwiazdek",
+                                            tint = if (index < reviewRating.toInt()) Color(0xFFFFC107) else Color(0xFFE0E0E0),
+                                            modifier = Modifier.size(36.dp).clickable { reviewRating = (index + 1).toFloat() }
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(10.dp))
+                                OutlinedTextField(
+                                    value = reviewComment,
+                                    onValueChange = { reviewComment = it },
+                                    label = { Text("Treść opinii") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 2,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Button(
+                                    onClick = {
+                                        if (reviewRating > 0f && reviewComment.isNotBlank()) {
+                                            appViewModel.addReview(bike.id, bike.name, reviewRating, reviewComment)
+                                            reviewRating = 0f
+                                            reviewComment = ""
+                                        }
+                                    },
+                                    enabled = reviewRating > 0f && reviewComment.isNotBlank(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Green800)
+                                ) {
+                                    Text("Dodaj opinię", fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    // Reviews list
                     Card(shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(3.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Opinie użytkowników", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            Text("Opinie użytkowników (${reviews.size})", fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(12.dp))
-                            if (bike.reviews.isEmpty()) {
+                            if (reviews.isEmpty()) {
                                 Text("Brak opinii. Bądź pierwszą osobą!", color = Color(0xFF666666))
                             } else {
-                                bike.reviews.forEachIndexed { index, review ->
+                                reviews.forEachIndexed { index, review ->
                                     ReviewItem(review)
-                                    if (index < bike.reviews.lastIndex)
+                                    if (index < reviews.lastIndex)
                                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 }
                             }
@@ -267,3 +336,4 @@ private fun ReviewItem(review: Review) {
         }
     }
 }
+

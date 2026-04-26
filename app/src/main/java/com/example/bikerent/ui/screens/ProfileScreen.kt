@@ -63,12 +63,13 @@ fun ProfileScreen(
     val rentalHistory by appViewModel.rentalHistory.collectAsState()
     val totalRentals = activeRentals.size + rentalHistory.size
 
-    val menuItems = listOf(
-        Triple(Icons.Filled.Settings, "Ustawienia konta", Screen.Settings.route),
-        Triple(Icons.Filled.History, "Historia wypożyczeń", Screen.Rentals.route),
-        Triple(Icons.Filled.Star, "Moje oceny", Screen.Rentals.route),
-        Triple(Icons.Filled.AdminPanelSettings, "Panel administracyjny", Screen.Admin.route),
-    )
+    val isAdmin = authViewModel.isAdmin
+    val menuItems = buildList {
+        add(Triple(Icons.Filled.Settings, "Ustawienia konta", Screen.Settings.route))
+        add(Triple(Icons.Filled.History, "Historia wypożyczeń", Screen.Rentals.route))
+        add(Triple(Icons.Filled.Star, "Moje oceny", Screen.MyReviews.route))
+        if (isAdmin) add(Triple(Icons.Filled.AdminPanelSettings, "Panel administracyjny", Screen.Admin.route))
+    }
 
     Scaffold(bottomBar = { BottomNavBar(navController) }) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding),

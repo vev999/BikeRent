@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.bikerent.data.db.converter.Converters
-import com.example.bikerent.data.Review
 
 @Entity(tableName = "bikes")
 @TypeConverters(Converters::class)
@@ -18,6 +17,5 @@ data class BikeEntity(
     val description: String,
     val available: Boolean,
     val shopId: String,
-    val category: String,
-    val reviews: List<Review>
+    val category: String
 )

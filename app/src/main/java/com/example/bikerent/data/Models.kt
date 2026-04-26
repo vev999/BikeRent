@@ -2,6 +2,9 @@ package com.example.bikerent.data
 
 data class Review(
     val id: String,
+    val bikeId: String,
+    val bikeName: String,
+    val userId: Long,
     val userName: String,
     val rating: Float,
     val comment: String,
@@ -18,8 +21,7 @@ data class Bike(
     val description: String,
     val available: Boolean,
     val shopId: String,
-    val category: String,
-    val reviews: List<Review>
+    val category: String
 )
 
 data class Shop(
@@ -56,21 +58,4 @@ data class SeedUser(
     val name: String,
     val email: String,
     val passwordHash: String
-)
-
-data class AdminUser(
-    val id: Int,
-    val name: String,
-    val email: String,
-    val rentals: Int,
-    val status: String
-)
-
-data class AdminComment(
-    val id: Int,
-    val user: String,
-    val bike: String,
-    val comment: String,
-    val date: String,
-    val status: String
 )

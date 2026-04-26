@@ -11,11 +11,13 @@ import com.example.bikerent.data.db.converter.Converters
 import com.example.bikerent.data.db.dao.ActiveRentalDao
 import com.example.bikerent.data.db.dao.BikeDao
 import com.example.bikerent.data.db.dao.RentalHistoryDao
+import com.example.bikerent.data.db.dao.ReviewDao
 import com.example.bikerent.data.db.dao.ShopDao
 import com.example.bikerent.data.db.dao.UserDao
 import com.example.bikerent.data.db.entity.ActiveRentalEntity
 import com.example.bikerent.data.db.entity.BikeEntity
 import com.example.bikerent.data.db.entity.RentalHistoryEntity
+import com.example.bikerent.data.db.entity.ReviewEntity
 import com.example.bikerent.data.db.entity.ShopEntity
 import com.example.bikerent.data.db.entity.UserEntity
 import kotlinx.coroutines.CoroutineScope
@@ -28,9 +30,10 @@ import kotlinx.coroutines.launch
         BikeEntity::class,
         ShopEntity::class,
         ActiveRentalEntity::class,
-        RentalHistoryEntity::class
+        RentalHistoryEntity::class,
+        ReviewEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -41,6 +44,7 @@ abstract class BikeRentDatabase : RoomDatabase() {
     abstract fun shopDao(): ShopDao
     abstract fun activeRentalDao(): ActiveRentalDao
     abstract fun rentalHistoryDao(): RentalHistoryDao
+    abstract fun reviewDao(): ReviewDao
 
     companion object {
         @Volatile
@@ -53,6 +57,7 @@ abstract class BikeRentDatabase : RoomDatabase() {
                     BikeRentDatabase::class.java,
                     "bikerent.db"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(SeedCallback())
                     .build()
                 INSTANCE = instance
@@ -84,29 +89,16 @@ abstract class BikeRentDatabase : RoomDatabase() {
 
         private suspend fun seedUsers(dao: UserDao) {
             dao.insertAll(DataSource.seededAdminUsers.map { user ->
-                UserEntity(
-                    id = user.id,
-                    name = user.name,
-                    email = user.email,
-                    passwordHash = user.passwordHash
-                )
+                UserEntity(id = user.id, name = user.name, email = user.email, passwordHash = user.passwordHash)
             })
         }
 
         private suspend fun seedBikes(dao: BikeDao) {
             dao.insertAll(DataSource.bikes.map { bike ->
                 BikeEntity(
-                    id = bike.id,
-                    name = bike.name,
-                    price = bike.price,
-                    rating = bike.rating,
-                    image = bike.image,
-                    images = bike.images,
-                    description = bike.description,
-                    available = bike.available,
-                    shopId = bike.shopId,
-                    category = bike.category,
-                    reviews = bike.reviews
+                    id = bike.id, name = bike.name, price = bike.price, rating = bike.rating,
+                    image = bike.image, images = bike.images, description = bike.description,
+                    available = bike.available, shopId = bike.shopId, category = bike.category
                 )
             })
         }
@@ -114,13 +106,9 @@ abstract class BikeRentDatabase : RoomDatabase() {
         private suspend fun seedShops(dao: ShopDao) {
             dao.insertAll(DataSource.shops.map { shop ->
                 ShopEntity(
-                    id = shop.id,
-                    name = shop.name,
-                    description = shop.description,
-                    location = shop.location,
-                    rating = shop.rating,
-                    image = shop.image,
-                    bikeIds = shop.bikeIds
+                    id = shop.id, name = shop.name, description = shop.description,
+                    location = shop.location, rating = shop.rating,
+                    image = shop.image, bikeIds = shop.bikeIds
                 )
             })
         }

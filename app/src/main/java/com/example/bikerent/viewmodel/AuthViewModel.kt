@@ -3,6 +3,7 @@ package com.example.bikerent.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.bikerent.data.DataSource
 import com.example.bikerent.data.repository.UserRepository
 import com.example.bikerent.data.util.HashUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,9 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
         private set
     var currentUserEmail: String = ""
         private set
+
+    val isAdmin: Boolean
+        get() = DataSource.seededAdminUsers.any { it.email == currentUserEmail }
 
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {

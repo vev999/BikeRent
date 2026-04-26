@@ -9,6 +9,9 @@ import com.example.bikerent.data.db.entity.BikeEntity
 @Dao
 interface BikeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(bike: BikeEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(bikes: List<BikeEntity>)
 
     @Query("SELECT * FROM bikes")
@@ -19,4 +22,7 @@ interface BikeDao {
 
     @Query("SELECT COUNT(*) FROM bikes")
     suspend fun count(): Int
+
+    @Query("UPDATE bikes SET rating = :rating WHERE id = :id")
+    suspend fun updateRating(id: String, rating: Float)
 }

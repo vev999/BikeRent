@@ -2,21 +2,28 @@
 
 BikeRent to aplikacja mobilna na Androida do wypożyczania rowerów. Projekt jest napisany w Kotlinie, używa Jetpack Compose do interfejsu i zachowuje architekturę MVVM z Repository Pattern.
 
-Aktualnie aplikacja działa lokalnie na bazie Room. Zewnętrzny backend AWS jest planowany, ale nie jest jeszcze podłączony.
+Aplikacja działa lokalnie na bazie Room. Zewnętrzny backend (np. AWS) jest planowany, ale jeszcze nie podłączony.
 
 ## Funkcje
 
-- przeglądanie dostępnych rowerów,
-- podgląd szczegółów roweru,
+- przeglądanie dostępnych rowerów z wyszukiwaniem i filtrowaniem,
+- podgląd szczegółów roweru — karuzela zdjęć, opis, cena, ocena,
 - podgląd profilu wypożyczalni,
-- rejestracja użytkownika przez e-mail i hasło,
-- logowanie przez e-mail i hasło,
-- lokalne przechowywanie użytkowników w Room,
-- hashowanie haseł przez SHA-256,
-- wypożyczanie i zwracanie rowerów,
-- historia wypożyczeń,
-- profil użytkownika,
-- panel administratora,
+- rejestracja i logowanie przez e-mail i hasło,
+- hashowanie haseł SHA-256,
+- wypożyczanie roweru i śledzenie czasu w czasie rzeczywistym,
+- zwrot roweru — czas trwania i koszt obliczane na podstawie rzeczywistego czasu wypożyczenia,
+- historia wypożyczeń z datą, czasem trwania i kosztem,
+- dodawanie ocen i komentarzy do rowerów (1–5 gwiazdek),
+- dynamicznie obliczana średnia ocena roweru,
+- podgląd własnych ocen w profilu użytkownika,
+- profil użytkownika z avatarem i statystykami,
+- edycja danych konta,
+- panel administratora z zarządzaniem rowerami i moderacją opinii,
+- dodawanie nowych rowerów przez administratora (nazwa, opis, cena, kategoria, sklep, zdjęcie),
+- wybór zdjęcia z urządzenia — plik jest kopiowany do lokalnego magazynu aplikacji,
+- usuwanie opinii przez administratora z potwierdzeniem,
+- dostęp do panelu administratora ograniczony tylko do konta admina,
 - przycisk logowania Google jako nieaktywna zaślepka.
 
 ## Technologie
@@ -24,24 +31,24 @@ Aktualnie aplikacja działa lokalnie na bazie Room. Zewnętrzny backend AWS jest
 - Kotlin
 - Jetpack Compose
 - Material 3
-- Navigation Compose
-- MVVM
-- Repository Pattern
-- Room
-- KSP
+- Navigation Compose 2.9.0
+- MVVM + Repository Pattern
+- Room 2.8.4 (baza lokalna SQLite)
+- KSP 2.3.2
 - Kotlin Coroutines i StateFlow
-- Coil
+- Coil 3.1.0 (ładowanie zdjęć — URL i lokalne pliki)
+- Activity Compose 1.10.1 (file picker)
 - Gradle Version Catalog
 
 ## Wymagania
 
-- Android Studio Meerkat 2025.3.3 albo nowsze
-- Android SDK z API 36 / 36.1
+- Android Studio Meerkat 2025.3.3 lub nowsze
+- Android SDK z API 36
 - JDK 21
-- Android 7.0, API 24, albo nowszy na emulatorze lub urządzeniu
-- Dostęp do internetu przy pierwszym Gradle Sync, żeby pobrać zależności
+- Android 7.0 (API 24) lub nowszy na emulatorze lub urządzeniu
+- Dostęp do internetu przy pierwszym Gradle Sync do pobrania zależności
 
-Projekt używa Gradle Wrappera, więc nie trzeba instalować Gradle ręcznie.
+Projekt używa Gradle Wrappera — Gradle nie trzeba instalować ręcznie.
 
 ## Uruchomienie
 
@@ -58,7 +65,7 @@ cd BikeRent
 
 4. Uruchom aplikację na emulatorze albo telefonie.
 
-Alternatywnie można sprawdzić build z terminala:
+Alternatywnie z terminala:
 
 ```bash
 ./gradlew assembleDebug
@@ -80,8 +87,8 @@ Testy jednostkowe:
 
 Przy pierwszym utworzeniu lokalnej bazy Room aplikacja seeduje:
 
-- testowe rowery,
-- testowe sklepy,
+- 6 rowerów (2 sklepy),
+- 2 sklepy,
 - konto administratora.
 
 Konto administratora:
@@ -89,18 +96,19 @@ Konto administratora:
 - e-mail: `admin@bikerent.local`
 - hasło: `Admin123!`
 
-Hasło administratora w kodzie nie jest przechowywane jako tekst jawny. W `DataSource.kt` zapisany jest hash SHA-256.
+Hasło w kodzie jest przechowywane wyłącznie jako hash SHA-256 w `DataSource.kt`.
 
-Nie seedujemy:
+Nie seedujemy zwykłych kont użytkowników, opinii ani historii wypożyczeń.
 
-- zwykłych kont użytkowników,
-- recenzji,
-- komentarzy,
-- przykładowej historii wypożyczeń zwykłych użytkowników.
+Użytkownicy tworzeni przez ekran rejestracji są zapisywani lokalnie w Room.
 
-Użytkownicy tworzeni przez ekran rejestracji zapisują się lokalnie w Room na urządzeniu osoby uruchamiającej aplikację.
+> **Uwaga:** Baza jest w wersji `2` i używa `fallbackToDestructiveMigration`. Jeśli aplikacja była uruchamiana wcześniej (wersja `1`), Room usunie starą bazę i utworzy nową. Trzeba zalogować się lub zarejestrować ponownie.
 
-Jeśli aplikacja była już wcześniej uruchamiana na emulatorze lub telefonie, lokalna baza mogła zachować stare dane. Wtedy trzeba odinstalować aplikację albo wyczyścić dane aplikacji, żeby seed wykonał się od nowa.
+## Zdjęcia rowerów
+
+Zdjęcia seedowanych rowerów są pobierane z URL-i Unsplash — wymaga połączenia z internetem.
+
+Zdjęcia rowerów dodanych przez administratora są kopiowane z urządzenia do wewnętrznego magazynu aplikacji (`filesDir/bike_images/`) i ładowane lokalnie przez Coil bez dostępu do sieci.
 
 ## Struktura projektu
 
@@ -129,46 +137,41 @@ BikeRent/
 └── README.md
 ```
 
-Pełny opis warstw, bazy danych, repozytoriów i przepływów znajduje się w `PROJECT_STRUCTURE.md`.
+Pełny opis warstw, bazy danych, repozytoriów i przepływów danych znajduje się w `PROJECT_STRUCTURE.md`.
 
 ## Architektura
 
-Projekt używa układu:
-
 ```text
-UI -> ViewModel -> Repository -> DAO -> Room
+UI → ViewModel → Repository → DAO → Room
 ```
 
-ViewModele nie odwołują się bezpośrednio do Room. Korzystają z interfejsów repozytoriów, dzięki czemu późniejsze przejście z lokalnej bazy na AWS API powinno wymagać głównie wymiany implementacji repozytoriów.
+ViewModele nie odwołują się bezpośrednio do Room. Korzystają z interfejsów repozytoriów, dzięki czemu późniejsze przejście na zewnętrzne API powinno wymagać głównie wymiany implementacji repozytoriów.
 
 ## Lokalna baza danych
 
-Baza Room ma nazwę:
+Nazwa bazy: `bikerent.db`  
+Wersja: `2`
 
-```text
-bikerent.db
-```
-
-Główne tabele:
+Tabele:
 
 - `users`
 - `bikes`
 - `shops`
 - `active_rentals`
 - `rental_history`
+- `reviews`
 
-Hasła użytkowników są zapisywane w tabeli `users` jako `passwordHash`.
+Hasła użytkowników są zapisywane w tabeli `users` jako `passwordHash` (SHA-256).
 
 ## Pliki lokalne i Git
 
-Do repozytorium nie powinny trafiać pliki lokalne generowane przez Android Studio i Gradle, m.in.:
+Do repozytorium nie trafiają pliki generowane przez Android Studio i Gradle:
 
 - `local.properties`
 - `.gradle/`
 - `.idea/`
 - `.claude/`
 - `app/build/`
-- wygenerowane pliki `.apk` i `.aab`
+- pliki `.apk` i `.aab`
 
-Te pliki są ignorowane przez `.gitignore`.
-
+Pliki te są ignorowane przez `.gitignore`.

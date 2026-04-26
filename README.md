@@ -102,7 +102,7 @@ Nie seedujemy zwykłych kont użytkowników, opinii ani historii wypożyczeń.
 
 Użytkownicy tworzeni przez ekran rejestracji są zapisywani lokalnie w Room.
 
-> **Uwaga:** Baza jest w wersji `2` i używa `fallbackToDestructiveMigration`. Jeśli aplikacja była uruchamiana wcześniej (wersja `1`), Room usunie starą bazę i utworzy nową. Trzeba zalogować się lub zarejestrować ponownie.
+
 
 ## Zdjęcia rowerów
 

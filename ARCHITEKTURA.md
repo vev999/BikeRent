@@ -270,27 +270,3 @@ appViewModel.refreshRentals() → _activeRentals.value = ...
 RentalsScreen obserwuje activeRentals: StateFlow → recomposition UI
 ```
 
----
-
-## Pytania, które mogą paść na obronie
-
-**Q: Dlaczego MVVM?**
-A: Oddziela logikę biznesową od UI. ViewModel przeżywa rotację ekranu (nie ginie jak Activity). UI tylko obserwuje StateFlow.
-
-**Q: Co to Repository Pattern?**
-A: Warstwa abstrakcji między ViewModel a źródłem danych. ViewModel nie wie skąd dane pochodzą (Room, API, cache). Łatwa podmiana implementacji.
-
-**Q: Jak działa Room?**
-A: Biblioteka ORM od Google. `@Entity` = tabela, `@Dao` = zapytania SQL jako interfejs, `@Database` = punkt dostępu. KSP generuje implementacje w czasie kompilacji.
-
-**Q: Dlaczego hashujemy hasła?**
-A: SHA-256 w `HashUtils` – gdyby ktoś odczytał bazę SQLite z urządzenia, nie zobaczy haseł w postaci jawnej.
-
-**Q: Co to `sealed class AuthState`?**
-A: Ograniczony zestaw możliwych stanów – kompilator wymusza obsługę wszystkich przypadków w `when`. Bezpieczniejsze niż enum bo może mieć dane (np. `Error(message)`).
-
-**Q: Co to `StateFlow` vs `LiveData`?**
-A: `StateFlow` to Kotlin Coroutines, działa z `collectAsState()` w Compose. `LiveData` to starsze API Androida, mniej idiomatyczne z Compose.
-
-**Q: Jak działa seedowanie bazy?**
-A: `SeedCallback` w `BikeRentDatabase` – przy każdym otwarciu bazy wstawia wstępne dane (rowery, sklepy, adminów) z `DataSource`. `IGNORE` conflict strategy – nie nadpisuje istniejących.

@@ -1,5 +1,7 @@
 package com.example.bikerent.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -33,7 +35,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.NavController
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.theme.Green800
@@ -95,11 +97,25 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
         }
     }
 
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp.toFloat()
     val infiniteTransition = rememberInfiniteTransition(label = "bike")
-    val bikeOffset by infiniteTransition.animateFloat(
-        initialValue = -30f, targetValue = 30f,
-        animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse),
-        label = "bikeOffset"
+    val bikeX by infiniteTransition.animateFloat(
+        initialValue = -70f,
+        targetValue = screenWidthDp + 70f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "bikeX"
+    )
+    val bikeYBob by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bikeYBob"
     )
 
     Box(
@@ -107,15 +123,29 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Color(0xFFE8F5E9), Color.White)))
     ) {
-        Icon(
-            imageVector = Icons.Filled.DirectionsBike,
-            contentDescription = null,
-            tint = Green800.copy(alpha = 0.15f),
+        Box(
             modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.Center)
-                .offset(y = (-200).dp, x = bikeOffset.dp)
-        )
+                .fillMaxWidth()
+                .height(100.dp)
+                .align(Alignment.TopCenter)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(Green800.copy(alpha = 0.2f))
+            )
+            Icon(
+                imageVector = Icons.Filled.DirectionsBike,
+                contentDescription = null,
+                tint = Green800.copy(alpha = 0.85f),
+                modifier = Modifier
+                    .size(52.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(x = bikeX.dp, y = (bikeYBob - 2f).dp)
+            )
+        }
 
         Column(
             modifier = Modifier

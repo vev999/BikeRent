@@ -1,4 +1,4 @@
-# BikeRent – Mapa kodu (do kolokwium/obrony)
+# BikeRent –
 
 ## Architektura ogólna: MVVM + Repository Pattern
 

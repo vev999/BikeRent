@@ -42,6 +42,9 @@ class UserRepositoryImpl(private val dao: UserDao) : UserRepository {
     override suspend fun updateUser(id: Long, name: String, email: String) =
         dao.updateNameAndEmail(id, name, email)
 
+    override suspend fun updateAvatarUri(id: Long, uri: String?) =
+        dao.updateAvatarUri(id, uri)
+
     private suspend fun ensureSeededAdminUsers() {
         dao.insertAll(DataSource.seededAdminUsers.map { user ->
             UserEntity(

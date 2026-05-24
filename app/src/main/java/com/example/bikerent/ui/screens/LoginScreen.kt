@@ -1,12 +1,5 @@
 package com.example.bikerent.ui.screens
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -31,9 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -57,7 +47,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.NavController
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.theme.Green800
@@ -97,56 +86,11 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
         }
     }
 
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp.toFloat()
-    val infiniteTransition = rememberInfiniteTransition(label = "bike")
-    val bikeX by infiniteTransition.animateFloat(
-        initialValue = -70f,
-        targetValue = screenWidthDp + 70f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "bikeX"
-    )
-    val bikeYBob by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "bikeYBob"
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Color(0xFFE8F5E9), Color.White)))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .align(Alignment.TopCenter)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(Green800.copy(alpha = 0.2f))
-            )
-            Icon(
-                imageVector = Icons.Filled.DirectionsBike,
-                contentDescription = null,
-                tint = Green800.copy(alpha = 0.85f),
-                modifier = Modifier
-                    .size(52.dp)
-                    .align(Alignment.BottomStart)
-                    .offset(x = bikeX.dp, y = (bikeYBob - 2f).dp)
-            )
-        }
-
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -283,21 +227,6 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
-                    HorizontalDivider()
-                    Spacer(Modifier.height(12.dp))
-
-                    // Google button - placeholder
-                    OutlinedButton(
-                        onClick = { /* Dostępne wkrótce */ },
-                        enabled = false,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Filled.Mail, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.size(8.dp))
-                        Text("Google — Dostępne wkrótce", fontSize = 14.sp)
-                    }
                 }
             }
         }

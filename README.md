@@ -6,8 +6,8 @@ Aplikacja działa lokalnie na bazie Room. Zewnętrzny backend (np. AWS) jest pla
 
 ## Funkcje
 
-- przeglądanie dostępnych rowerów z wyszukiwaniem i filtrowaniem,
-- podgląd szczegółów roweru — karuzela zdjęć, opis, cena, ocena,
+- przeglądanie dostępnych rowerów z wyszukiwaniem i filtrowaniem po kategorii,
+- podgląd szczegółów roweru — karuzela zdjęć, opis, cena, ocena, film promocyjny (VideoView), dzwonek (MediaPlayer),
 - podgląd profilu wypożyczalni,
 - rejestracja i logowanie przez e-mail i hasło,
 - hashowanie haseł SHA-256,
@@ -17,14 +17,14 @@ Aplikacja działa lokalnie na bazie Room. Zewnętrzny backend (np. AWS) jest pla
 - dodawanie ocen i komentarzy do rowerów (1–5 gwiazdek),
 - dynamicznie obliczana średnia ocena roweru,
 - podgląd własnych ocen w profilu użytkownika,
-- profil użytkownika z avatarem i statystykami,
+- profil użytkownika z awatarem (wybór zdjęcia z urządzenia) i statystykami,
 - edycja danych konta,
 - panel administratora z zarządzaniem rowerami i moderacją opinii,
 - dodawanie nowych rowerów przez administratora (nazwa, opis, cena, kategoria, sklep, zdjęcie),
 - wybór zdjęcia z urządzenia — plik jest kopiowany do lokalnego magazynu aplikacji,
 - usuwanie opinii przez administratora z potwierdzeniem,
 - dostęp do panelu administratora ograniczony tylko do konta admina,
-- przycisk logowania Google jako nieaktywna zaślepka.
+- animacja przejścia między ekranami — logo BikeRent z kręcącymi się kołami (500 ms).
 
 ## Technologie
 
@@ -87,8 +87,8 @@ Testy jednostkowe:
 
 Przy pierwszym utworzeniu lokalnej bazy Room aplikacja seeduje:
 
-- 6 rowerów (2 sklepy),
-- 2 sklepy,
+- 12 rowerów (4 sklepy),
+- 4 sklepy,
 - konto administratora.
 
 Konto administratora:
@@ -102,7 +102,12 @@ Nie seedujemy zwykłych kont użytkowników, opinii ani historii wypożyczeń.
 
 Użytkownicy tworzeni przez ekran rejestracji są zapisywani lokalnie w Room.
 
+## Multimedia
 
+Zasoby multimedialne (`app/src/main/res/raw/`):
+
+- `bike_bell.mp3` — dzwonek roweru (~19 KB), odtwarzany przez `MediaPlayer` po naciśnięciu przycisku „Dzwonek" w szczegółach roweru.
+- `bike_video.mp4` — film promocyjny (~846 KB), odtwarzany przez `VideoView` w sekcji „Film promocyjny". Film startuje wstrzymany — użytkownik klika play samodzielnie.
 
 ## Zdjęcia rowerów
 
@@ -133,6 +138,8 @@ BikeRent/
 ├── build.gradle.kts
 ├── gradle.properties
 ├── settings.gradle.kts
+├── ARCHITEKTURA.md
+├── BAZA_DANYCH.md
 ├── PROJECT_STRUCTURE.md
 └── README.md
 ```
@@ -149,12 +156,12 @@ ViewModele nie odwołują się bezpośrednio do Room. Korzystają z interfejsów
 
 ## Lokalna baza danych
 
-Nazwa bazy: `bikerent.db`  
-Wersja: `2`
+Nazwa bazy: `bikerent.db`
+Wersja: `3`
 
 Tabele:
 
-- `users`
+- `users` (z kolumną `avatarUri` od wersji 3)
 - `bikes`
 - `shops`
 - `active_rentals`

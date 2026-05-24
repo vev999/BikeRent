@@ -30,6 +30,8 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
         private set
     var currentUserEmail: String = ""
         private set
+    var currentAvatarUri: String? = null
+        private set
 
     val isAdmin: Boolean
         get() = DataSource.seededAdminUsers.any { it.email == currentUserEmail }
@@ -47,6 +49,7 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
                 currentUserId = user.id
                 currentUserName = user.name
                 currentUserEmail = user.email
+                currentAvatarUri = user.avatarUri
                 _authState.value = AuthState.Success(user.id, user.name, user.email)
             } else {
                 _authState.value = AuthState.Error("Nieprawidłowy e-mail lub hasło")
@@ -76,6 +79,7 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
                     currentUserId = user.id
                     currentUserName = user.name
                     currentUserEmail = user.email
+                    currentAvatarUri = user.avatarUri
                     _authState.value = AuthState.Success(user.id, user.name, user.email)
                 },
                 onFailure = { e ->
@@ -93,10 +97,18 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
         }
     }
 
+    fun updateAvatarUri(uri: String?) {
+        viewModelScope.launch {
+            userRepository.updateAvatarUri(currentUserId, uri)
+            currentAvatarUri = uri
+        }
+    }
+
     fun logout() {
         currentUserId = -1L
         currentUserName = ""
         currentUserEmail = ""
+        currentAvatarUri = null
         _authState.value = AuthState.Idle
     }
 

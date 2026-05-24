@@ -7,7 +7,7 @@
 | Biblioteka | Room (Jetpack) |
 | Silnik | SQLite |
 | Nazwa pliku | `bikerent.db` |
-| Wersja schematu | 2 |
+| Wersja schematu | 3 |
 | Migracja | `fallbackToDestructiveMigration()` – przy zmianie wersji kasuje i odtwarza bazę |
 | Singleton | `BikeRentDatabase.getInstance(context)` |
 
@@ -25,13 +25,14 @@ Przechowuje konta użytkowników (zwykłych i adminów).
 | `email` | TEXT | NOT NULL, UNIQUE | Adres e-mail (unikalny – indeks) |
 | `name` | TEXT | NOT NULL | Imię / nazwa wyświetlana |
 | `passwordHash` | TEXT | NOT NULL | Skrót SHA-256 hasła |
+| `avatarUri` | TEXT | NULL | Ścieżka do zdjęcia awatara (null = brak) — dodane w wersji 3 |
 
 **Indeksy:** `idx_users_email` (UNIQUE) na kolumnie `email`
 
 **Dane startowe (seed):**
 ```
 id=0, name="Administrator", email="admin@bikerent.local"
-password (jawne): "admin" → hash SHA-256 przechowywany w bazie
+hasło (jawne): "Admin123!" → hash SHA-256 przechowywany w bazie
 ```
 
 ---
@@ -42,29 +43,35 @@ Katalog rowerów dostępnych do wypożyczenia.
 
 | Kolumna | Typ SQLite | Ograniczenia | Opis |
 |---------|-----------|-------------|------|
-| `id` | TEXT | PRIMARY KEY | Identyfikator roweru (np. "1", "2") |
+| `id` | TEXT | PRIMARY KEY | Identyfikator roweru |
 | `name` | TEXT | NOT NULL | Nazwa roweru |
 | `price` | INTEGER | NOT NULL | Cena za godzinę (PLN) |
-| `rating` | REAL | NOT NULL | Średnia ocena (0.0 – 5.0) |
+| `rating` | REAL | NOT NULL | Średnia ocena (0.0 – 5.0), dynamicznie aktualizowana |
 | `image` | TEXT | NOT NULL | URL głównego zdjęcia |
 | `images` | TEXT | NOT NULL | Lista URL zdjęć serializowana jako `url1\|url2\|...` |
 | `description` | TEXT | NOT NULL | Opis roweru |
 | `available` | INTEGER | NOT NULL | Dostępność: 1 = dostępny, 0 = niedostępny |
 | `shopId` | TEXT | NOT NULL | ID sklepu, do którego należy rower |
-| `category` | TEXT | NOT NULL | Kategoria (Miejski, Górski, Elektryczny, Szosowy, Cruiser, Hybrydowy) |
+| `category` | TEXT | NOT NULL | Kategoria |
 
-> `images` to lista stringów. Room nie obsługuje natywnie `List<String>`, dlatego `Converters` konwertuje ją na jeden ciąg rozdzielony `|` i odwrotnie.
+> `images` to lista stringów serializowana przez `Converters` (`joinToString("|")` / `split("|")`).
 
-**Dane startowe (seed):**
+**Dane startowe (seed) – 12 rowerów, wszystkie dostępne:**
 
-| id | name | price | category | shopId | available |
-|----|------|-------|----------|--------|-----------|
-| 1 | Urban City Bike | 15 zł/h | Miejski | 1 | tak |
-| 2 | Mountain Explorer | 25 zł/h | Górski | 1 | tak |
-| 3 | E-Bike Pro | 35 zł/h | Elektryczny | 2 | tak |
-| 4 | Racing Speed | 30 zł/h | Szosowy | 2 | nie |
-| 5 | Beach Cruiser | 18 zł/h | Cruiser | 1 | tak |
-| 6 | Hybrid Commuter | 20 zł/h | Hybrydowy | 2 | tak |
+| id | name | price | category | shopId |
+|----|------|-------|----------|--------|
+| 1 | Urban City Bike | 15 zł/h | Miejski | 1 |
+| 2 | Mountain Explorer | 25 zł/h | Górski | 1 |
+| 3 | E-Bike Pro | 35 zł/h | Elektryczny | 2 |
+| 4 | Racing Speed | 30 zł/h | Szosowy | 2 |
+| 5 | Beach Cruiser | 18 zł/h | Cruiser | 1 |
+| 6 | Hybrid Commuter | 20 zł/h | Hybrydowy | 2 |
+| 7 | Kids Explorer | 10 zł/h | Dziecięcy | 3 |
+| 8 | Tandem Adventure | 40 zł/h | Tandem | 3 |
+| 9 | Urban Folder | 22 zł/h | Składany | 3 |
+| 10 | Cargo Express | 28 zł/h | Cargo | 4 |
+| 11 | Gravel Master | 32 zł/h | Gravel | 4 |
+| 12 | BMX Street | 20 zł/h | BMX | 4 |
 
 ---
 
@@ -82,12 +89,14 @@ Sklepy / wypożyczalnie rowerów.
 | `image` | TEXT | NOT NULL | URL zdjęcia sklepu |
 | `bikeIds` | TEXT | NOT NULL | Lista ID rowerów serializowana jako `id1\|id2\|...` |
 
-**Dane startowe (seed):**
+**Dane startowe (seed) – 4 sklepy:**
 
-| id | name | location | rating |
-|----|------|----------|--------|
-| 1 | BikeHub Centrum | ul. Główna 15, Warszawa | 4.9 |
-| 2 | EcoBike Station | ul. Zielona 42, Warszawa | 4.7 |
+| id | name | location | rating | rowery |
+|----|------|----------|--------|--------|
+| 1 | BikeHub Centrum | ul. Główna 15, Warszawa | 4.9 | 1, 2, 5 |
+| 2 | EcoBike Station | ul. Zielona 42, Warszawa | 4.7 | 3, 4, 6 |
+| 3 | VeloCity Praga | ul. Targowa 7, Warszawa | 4.8 | 7, 8, 9 |
+| 4 | GreenWheels Mokotów | ul. Puławska 100, Warszawa | 4.6 | 10, 11, 12 |
 
 ---
 
@@ -99,20 +108,16 @@ Aktywne (trwające) wypożyczenia.
 |---------|-----------|-------------|------|
 | `id` | TEXT | PRIMARY KEY | UUID wypożyczenia |
 | `bikeId` | TEXT | NOT NULL | ID wypożyczonego roweru |
-| `bikeName` | TEXT | NOT NULL | Nazwa roweru (kopia – denormalizacja) |
-| `shopName` | TEXT | NOT NULL | Nazwa sklepu (kopia – denormalizacja) |
-| `startTime` | TEXT | NOT NULL | Data i godzina rozpoczęcia (ISO 8601) |
-| `endTime` | TEXT | NOT NULL | Planowany czas zwrotu (ISO 8601) |
+| `bikeName` | TEXT | NOT NULL | Nazwa roweru (denormalizacja) |
+| `shopName` | TEXT | NOT NULL | Nazwa sklepu (denormalizacja) |
+| `startTime` | TEXT | NOT NULL | Data i godzina rozpoczęcia (dd.MM.yyyy HH:mm) |
+| `endTime` | TEXT | NOT NULL | Planowany czas zwrotu |
 | `returnLocation` | TEXT | NOT NULL | Miejsce zwrotu |
 | `userId` | INTEGER | NOT NULL, FK → users.id CASCADE | Właściciel wypożyczenia |
 
-**Klucz obcy:** `userId` → `users.id` z `ON DELETE CASCADE` (usunięcie usera kasuje jego aktywne wypożyczenia)
+**Klucz obcy:** `userId` → `users.id` z `ON DELETE CASCADE`
 
 **Indeksy:** `idx_active_rentals_userId` na `userId`
-
-**Zapytania DAO:**
-- `getAllForUser(userId)` – pobiera posortowane malejąco po `startTime`
-- `deleteById(rentalId)` – używane przy zwrocie roweru
 
 ---
 
@@ -125,8 +130,8 @@ Historia zakończonych wypożyczeń.
 | `id` | TEXT | PRIMARY KEY | UUID rekordu historii |
 | `bikeName` | TEXT | NOT NULL | Nazwa roweru |
 | `shopName` | TEXT | NOT NULL | Nazwa sklepu |
-| `date` | TEXT | NOT NULL | Data wypożyczenia (ISO 8601) |
-| `duration` | TEXT | NOT NULL | Czas trwania w czytelnej formie (np. "2 godz. 15 min") |
+| `date` | TEXT | NOT NULL | Zakres dat (dd.MM.yyyy HH:mm – dd.MM.yyyy HH:mm) |
+| `duration` | TEXT | NOT NULL | Czas trwania (np. „2 h 15 min") |
 | `cost` | INTEGER | NOT NULL | Koszt w PLN |
 | `userId` | INTEGER | NOT NULL, FK → users.id CASCADE | Właściciel historii |
 
@@ -148,20 +153,20 @@ Recenzje rowerów wystawiane przez użytkowników.
 
 | Kolumna | Typ SQLite | Ograniczenia | Opis |
 |---------|-----------|-------------|------|
-| `id` | TEXT | PRIMARY KEY | UUID recenzji |
+| `id` | TEXT | PRIMARY KEY | `"rev_${System.currentTimeMillis()}"` |
 | `bikeId` | TEXT | NOT NULL | ID ocenianego roweru |
-| `bikeName` | TEXT | NOT NULL | Nazwa roweru (kopia) |
+| `bikeName` | TEXT | NOT NULL | Nazwa roweru (denormalizacja) |
 | `userId` | INTEGER | NOT NULL | ID autora |
-| `userName` | TEXT | NOT NULL | Imię autora (kopia) |
+| `userName` | TEXT | NOT NULL | Imię autora (denormalizacja) |
 | `rating` | REAL | NOT NULL | Ocena 1–5 |
 | `comment` | TEXT | NOT NULL | Treść komentarza |
-| `date` | TEXT | NOT NULL | Data wystawienia (ISO 8601) |
+| `date` | TEXT | NOT NULL | Data wystawienia (dd.MM.yyyy) |
 
 **Brak klucza obcego** do `users` (recenzje pozostają po usunięciu konta – celowy projekt)
 
 **Indeksy:** `idx_reviews_bikeId` na `bikeId`, `idx_reviews_userId` na `userId`
 
-**Ograniczenie biznesowe:** jeden użytkownik może wystawić tylko jedną recenzję danemu rowerowi (sprawdzane przez `ReviewDao.findByUserAndBike` przed insertem).
+**Ograniczenie biznesowe:** jeden użytkownik może wystawić tylko jedną recenzję danemu rowerowi (sprawdzane przez `ReviewDao.findByUserAndBike`).
 
 ---
 
@@ -202,8 +207,8 @@ Używane w: `bikes.images`, `shops.bikeIds`
 
 Kolejność seedowania:
 1. `users` – konta adminów
-2. `bikes` – predefiniowane rowery
-3. `shops` – predefiniowane sklepy
+2. `bikes` – 12 predefiniowanych rowerów
+3. `shops` – 4 predefiniowane sklepy
 
 ---
 
@@ -211,9 +216,19 @@ Kolejność seedowania:
 
 | DAO | Metody |
 |-----|--------|
-| `UserDao` | `insert` (ABORT), `insertAll` (IGNORE), `findByEmail`, `findByEmailAndPassword`, `findById`, `updateNameAndEmail` |
+| `UserDao` | `insert` (ABORT), `insertAll` (IGNORE), `findByEmail`, `findByEmailAndPassword`, `findById`, `updateNameAndEmail`, `updateAvatarUri` |
 | `BikeDao` | `insert` (REPLACE), `insertAll` (REPLACE), `getAll`, `findById`, `count`, `updateRating` |
 | `ShopDao` | `insertAll` (REPLACE), `getAll`, `findById`, `count` |
 | `ActiveRentalDao` | `insert` (REPLACE), `getAllForUser(userId)`, `deleteById` |
 | `RentalHistoryDao` | `insert` (REPLACE), `getAllForUser(userId)` |
 | `ReviewDao` | `insert` (REPLACE), `getAllForBike`, `getAllForUser`, `getAll`, `deleteById`, `findByUserAndBike` |
+
+---
+
+## Historia wersji schematu
+
+| Wersja | Zmiana |
+|--------|--------|
+| 1 | Wersja inicjalna: users, bikes, shops, active_rentals, rental_history |
+| 2 | Dodanie tabeli `reviews` + ReviewDao |
+| 3 | Dodanie kolumny `avatarUri TEXT NULL` do tabeli `users` |

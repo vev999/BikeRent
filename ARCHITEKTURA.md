@@ -1,4 +1,4 @@
-# BikeRent –
+# BikeRent – Mapa kodu (do kolokwium/obrony)
 
 ## Architektura ogólna: MVVM + Repository Pattern
 
@@ -30,7 +30,7 @@ SQLite (Room Database)
 
 ---
 
-## 2. Nawigacja
+## 2. Nawigacja i animacja przejść
 
 ### `navigation/AppNavigation.kt`
 
@@ -49,7 +49,17 @@ Zawiera dwie rzeczy:
 | `Admin` | `"admin"` | Panel admina |
 | `MyReviews` | `"my_reviews"` | Moje recenzje |
 
-**`@Composable fun AppNavigation()`** – tworzy `NavHostController`, instancje obu ViewModeli, i podpina każdy ekran do jego trasy. Nasłuchuje `authState` – po zalogowaniu wywołuje `appViewModel.initForUser(...)`.
+**`@Composable fun AppNavigation()`** – tworzy `NavHostController`, instancje obu ViewModeli, podpina każdy ekran do jego trasy i nasłuchuje `authState` – po zalogowaniu wywołuje `appViewModel.initForUser(...)`.
+
+`NavHost` jest opakowany w `Box`. Nad nim wyświetlany jest `BikeTransitionOverlay` – biały semi-transparentny overlay z logo BikeRent, widoczny przez 500 ms przy każdej zmianie ekranu:
+
+```kotlin
+LaunchedEffect(currentEntry) {
+    showTransition = true
+    delay(500)
+    showTransition = false
+}
+```
 
 ---
 
@@ -66,11 +76,15 @@ Odpowiada za **logowanie i rejestrację**.
 - `Error(message)` – błąd
 
 **Kluczowe metody:**
-- `login(email, password)` – hashuje hasło SHA-256, szuka użytkownika w bazie
+- `login(email, password)` – hashuje hasło SHA-256, szuka użytkownika w bazie, ładuje `currentAvatarUri`
 - `register(name, email, password, confirmPassword)` – waliduje pola, hashuje, tworzy konto
-- `logout()` – resetuje stan do `Idle`
+- `logout()` – resetuje stan do `Idle`, czyści `currentAvatarUri`
 - `updateUserData(name, email)` – zmiana danych profilu
+- `updateAvatarUri(uri)` – zapisuje URI awatara do Room i aktualizuje `currentAvatarUri`
 - `isAdmin` – sprawdza czy email jest na liście adminów z `DataSource`
+
+**Właściwości stanu:**
+- `currentAvatarUri: String?` – ścieżka do awatara zalogowanego użytkownika (null jeśli nie ustawiony)
 
 **`AuthViewModelFactory`** – potrzebna bo ViewModel potrzebuje `UserRepository` w konstruktorze.
 
@@ -107,6 +121,7 @@ Każdy ekran to `@Composable fun` przyjmujący `navController` i `appViewModel` 
 
 ### `LoginScreen.kt`
 - Formularz logowania i rejestracja (zakładki).
+- Logo aplikacji: `Icons.Filled.DirectionsBike` (60 dp, zielony) + napis „BikeRent".
 - Obserwuje `authState` – po `Success` nawiguje do `Home`.
 - Walidacja po stronie ViewModelu.
 
@@ -117,9 +132,11 @@ Każdy ekran to `@Composable fun` przyjmujący `navController` i `appViewModel` 
 - Zawiera `BottomNavBar`.
 
 ### `BikeDetailScreen.kt`
-- Szczegóły roweru (zdjęcia, opis, cena, ocena).
+- Karuzela zdjęć (`HorizontalPager` + wskaźnik strony).
+- Przycisk „Dzwonek" → `MediaPlayer.create(context, R.raw.bike_bell)`.
+- Sekcja „Film promocyjny" → `VideoView` z `R.raw.bike_video`; film startuje **wstrzymany**.
 - Przycisk „Wypożycz" → `appViewModel.rentBike(...)`.
-- Lista recenzji (`currentBikeReviews`) + formularz dodawania recenzji.
+- Lista recenzji (`currentBikeReviews`) + formularz dodawania recenzji (ukryty po wystawieniu).
 - Link do profilu sklepu.
 
 ### `ShopProfileScreen.kt`
@@ -128,103 +145,126 @@ Każdy ekran to `@Composable fun` przyjmujący `navController` i `appViewModel` 
 
 ### `RentalsScreen.kt`
 - Dwie sekcje: aktywne wypożyczenia i historia.
+- Używa `ScreenHeader("Moje Wypożyczenia", onBack = popBackStack)`.
 - Przycisk „Zwróć" → `appViewModel.returnBike(...)`.
 
 ### `ProfileScreen.kt`
-- Wyświetla dane zalogowanego użytkownika.
+- Awatar: `AsyncImage` (96 dp, kółko) jeśli `authViewModel.currentAvatarUri != null`, inaczej zielone kółko z inicjałem.
+- Wyświetla dane zalogowanego użytkownika i statystyki.
 - Przycisk wylogowania → `authViewModel.logout()` → nawigacja do `Login`.
 - Jeśli `authViewModel.isAdmin` → przycisk do panelu admina.
+- Używa `ScreenHeader("Profil")`.
 
 ### `UserSettingsScreen.kt`
+- Awatar z możliwością zmiany: klikalne kółko (AsyncImage lub inicjał) z ikoną aparatu w rogu.
+- Picker uruchamiany przez `rememberLauncherForActivityResult(ActivityResultContracts.GetContent())`.
+- Wybrany plik kopiowany do `filesDir/bike_images/`, URI zapisywane do Room przez `authViewModel.updateAvatarUri(uri)`.
 - Edycja imienia i emaila → `authViewModel.updateUserData(...)`.
+- Używa `ScreenHeader("Ustawienia konta", onBack = navigateUp)`.
 
 ### `AdminPanelScreen.kt`
 - Widoczny tylko dla adminów.
-- Dodawanie nowych rowerów (formularz z wyborem sklepu, kategorii, ceny).
+- Dodawanie nowych rowerów (formularz z wyborem sklepu, kategorii, ceny, file picker).
 - Lista wszystkich recenzji z możliwością usunięcia.
 
 ### `MyReviewsScreen.kt`
 - Lista recenzji napisanych przez zalogowanego użytkownika.
-- Możliwość usunięcia własnej recenzji.
+- Używa `ScreenHeader("Moje opinie", onBack = navigateUp)`.
 
 ---
 
-## 5. Komponenty UI
+## 5. Komponenty UI (`ui/components/`)
 
-### `ui/components/BottomNavBar.kt`
+### `BottomNavBar.kt`
 - Dolny pasek nawigacyjny z 4 pozycjami: Home, Wypożyczenia, Profil, Ustawienia.
 - Podświetla aktywny ekran.
 - Używa `navController.navigate(...)` z `popUpTo` żeby nie stackować ekranów.
 
+### `ScreenHeader.kt`
+- Wspólny zielony nagłówek używany przez: Profile, Rentals, UserSettings, MyReviews.
+- Zapewnia jednolitą wysokość na wszystkich ekranach.
+- `Row` z `padding(start=4, top=40, end=16, bottom=20)`.
+- Ekrany bez przycisku wstecz dostają `Spacer(52.dp)` zamiast `IconButton`.
+
+### `BikeTransitionOverlay.kt`
+- Semi-transparentny biały overlay (alpha 0.96) wyświetlany 500 ms przy każdej zmianie ekranu.
+- `AnimatedVisibility` z `fadeIn(80ms)` / `fadeOut(180ms)`.
+- Zawiera `Icons.Filled.DirectionsBike` (80 dp, zielony) — to samo logo co na ekranie logowania.
+- Na warstwie ikony rysowany jest `SpinningWheelsOverlay` (Canvas): 6 szprych na każdym kole, obracające się co 700 ms.
+- Środki kół dopasowane do geometrii ikony: tył `(5/24 × w, 17/24 × h)`, przód `(19/24 × w, 17/24 × h)`.
+- Pod ikoną napis „BikeRent" (26 sp, Bold, zielony).
+
 ### `ui/theme/`
-- `Color.kt` – definicje kolorów (np. `Green800`)
+- `Color.kt` – definicje kolorów (np. `Green800 = #2E7D32`, `Green100`)
 - `Theme.kt` – `BikeRentTheme` (Material 3)
 - `Type.kt` – typografia
 
 ---
 
-## 6. Dane – warstwa `data/`
+## 6. Ikonka aplikacji (`res/drawable/`)
+
+- `ic_launcher_background.xml` – białe tło (`#FFFFFF`).
+- `ic_launcher_foreground.xml` – zielony kolarz (`#2E7D32`), ścieżki skopiowane dosłownie z `Icons.Filled.DirectionsBike` z biblioteki Material Icons. `fillType="evenOdd"` tworzy pierścienie kół (efekt ring). Skalowanie 3× w `<group>` z `translateX/Y=18` (safe zone 18–90 w 108×108 viewport).
+- Dotyczy zarówno `ic_launcher.xml` jak i `ic_launcher_round.xml`.
+
+---
+
+## 7. Dane – warstwa `data/`
 
 ### `data/Models.kt`
 Czyste klasy domenowe (nie znają Room ani bazy danych):
 - `Bike` – rower (id, name, price, rating, image, images, description, available, shopId, category)
 - `Shop` – sklep (id, name, description, location, rating, image, bikeIds)
-- `ActiveRental` – aktywne wypożyczenie (id, bikeId, bikeName, shopName, startTime, endTime, returnLocation)
-- `RentalHistory` – zakończone wypożyczenie (id, bikeName, shopName, date, duration, cost)
+- `ActiveRental` – aktywne wypożyczenie
+- `RentalHistory` – zakończone wypożyczenie
 - `Review` – recenzja (id, bikeId, bikeName, userId, userName, rating, comment, date)
 - `SeedUser` – predefiniowany użytkownik/admin do seedowania bazy
 
 ### `data/DataSource.kt`
 - Obiekt singleton z hardkodowanymi danymi startowymi.
-- `bikes` – lista 6 predefiniowanych rowerów (Urban City, Mountain Explorer, E-Bike Pro, Racing Speed, Beach Cruiser, Hybrid Commuter).
-- `shops` – lista sklepów (BikeHub Centrum, Rower & Sport).
+- `bikes` – 12 predefiniowanych rowerów, wszystkie `available = true`.
+- `shops` – 4 sklepy: BikeHub Centrum (id=1), EcoBike Station (id=2), VeloCity Praga (id=3), GreenWheels Mokotów (id=4).
 - `seededAdminUsers` – konta adminów z hashami haseł, wczytywane przy starcie bazy.
 
 ---
 
-## 7. Baza danych – Room (`data/db/`)
+## 8. Baza danych – Room (`data/db/`)
 
 ### `data/db/BikeRentDatabase.kt`
 - Klasa `@Database` łącząca wszystkie encje i DAO.
 - **Singleton** tworzony przez `getInstance(context)`.
-- Wersja bazy: `2`, `fallbackToDestructiveMigration()` – przy zmianie wersji kasuje dane.
+- **Wersja bazy: `3`**, `fallbackToDestructiveMigration()` – przy zmianie wersji kasuje dane.
 - `SeedCallback` – wypełnia bazę danymi z `DataSource` przy `onCreate` i `onOpen`.
 
 ### Encje (`data/db/entity/`) – mapowanie klas na tabele SQL
 
-| Plik | Tabela | Klucz główny | Relacje |
-|------|--------|--------------|---------|
-| `UserEntity` | `users` | `id: Long` (autoincrement) | unikalny email |
+| Plik | Tabela | Klucz główny | Uwagi |
+|------|--------|--------------|-------|
+| `UserEntity` | `users` | `id: Long` (autoincrement) | + `avatarUri: String?` (v3) |
 | `BikeEntity` | `bikes` | `id: String` | — |
 | `ShopEntity` | `shops` | `id: String` | — |
-| `ActiveRentalEntity` | `active_rentals` | `id: String` | FK → `users.id` (CASCADE) |
-| `RentalHistoryEntity` | `rental_history` | `id: String` | FK → `users.id` (CASCADE) |
+| `ActiveRentalEntity` | `active_rentals` | `id: String` | FK → `users.id` CASCADE |
+| `RentalHistoryEntity` | `rental_history` | `id: String` | FK → `users.id` CASCADE |
 | `ReviewEntity` | `reviews` | `id: String` | indeksy na `bikeId`, `userId` |
 
 ### DAO (`data/db/dao/`) – interfejsy zapytań SQL
 
 | Plik | Kluczowe metody |
 |------|----------------|
-| `UserDao` | `insert`, `findByEmail`, `findByEmailAndPassword`, `updateNameAndEmail` |
+| `UserDao` | `insert`, `findByEmail`, `findByEmailAndPassword`, `updateNameAndEmail`, `updateAvatarUri` |
 | `BikeDao` | `insert`, `insertAll`, `getAll`, `findById`, `updateRating` |
 | `ShopDao` | `insertAll`, `getAll`, `findById` |
 | `ActiveRentalDao` | `insert`, `getAllForUser(userId)`, `deleteById` |
 | `RentalHistoryDao` | `insert`, `getAllForUser(userId)` |
 | `ReviewDao` | `insert`, `getAllForBike`, `getAllForUser`, `getAll`, `deleteById`, `findByUserAndBike` |
 
-### `data/db/converter/Converters.kt`
-- Room nie umie zapisać `List<String>` – `Converters` konwertuje je na `String` rozdzielony `|` i odwrotnie.
-- Używane dla `BikeEntity.images` i `ShopEntity.bikeIds`.
-
 ---
 
-## 8. Repozytoria (`data/repository/`)
-
-Warstwa pośrednia między ViewModelem a DAO. Interfejs + implementacja.
+## 9. Repozytoria (`data/repository/`)
 
 | Interfejs | Implementacja | Odpowiada za |
 |-----------|--------------|--------------|
-| `UserRepository` | `UserRepositoryImpl` | logowanie, rejestracja, aktualizacja danych |
+| `UserRepository` | `UserRepositoryImpl` | logowanie, rejestracja, aktualizacja danych, `updateAvatarUri` |
 | `BikeRepository` | `BikeRepositoryImpl` | CRUD rowerów, aktualizacja oceny |
 | `ShopRepository` | `ShopRepositoryImpl` | pobieranie sklepów |
 | `RentalRepository` | `RentalRepositoryImpl` | wypożyczanie, zwrot roweru (oblicza czas/koszt), historia |
@@ -232,7 +272,7 @@ Warstwa pośrednia między ViewModelem a DAO. Interfejs + implementacja.
 
 **Wzorzec:** każda implementacja zawiera prywatną metodę `Entity.toDomain()` – konwertuje encję Room na czysty model domenowy.
 
-**Wyjątek – `RentalRepositoryImpl.returnBike(...)`** – najbardziej złożona logika:
+**`RentalRepositoryImpl.returnBike(...)` – złożona logika:**
 1. Pobiera aktywny wynajem
 2. Usuwa z `active_rentals`
 3. Oblicza czas trwania (minuty → czytelny tekst)
@@ -241,14 +281,15 @@ Warstwa pośrednia między ViewModelem a DAO. Interfejs + implementacja.
 
 ---
 
-## 9. Narzędzia (`data/util/`)
+## 10. Narzędzia (`data/util/`)
 
 ### `HashUtils.kt`
 - `sha256(input: String): String` – hashuje hasło przed zapisem/porównaniem z bazą.
 - Używa `java.security.MessageDigest`.
 
 ### `ImageUtils.kt`
-- Pomocnik do obsługi zdjęć (np. przy dodawaniu roweru przez admina).
+- `copyToAppStorage(context, uri)` – kopiuje plik z urządzenia do `filesDir/bike_images/`.
+- `imageModel(path)` – zwraca `File(path)` dla lokalnych ścieżek albo `String` dla URL-i (Coil 3 obsługuje oba).
 
 ---
 
@@ -270,3 +311,33 @@ appViewModel.refreshRentals() → _activeRentals.value = ...
 RentalsScreen obserwuje activeRentals: StateFlow → recomposition UI
 ```
 
+---
+
+## Pytania, które mogą paść na obronie
+
+**Q: Dlaczego MVVM?**
+A: Oddziela logikę biznesową od UI. ViewModel przeżywa rotację ekranu (nie ginie jak Activity). UI tylko obserwuje StateFlow.
+
+**Q: Co to Repository Pattern?**
+A: Warstwa abstrakcji między ViewModel a źródłem danych. ViewModel nie wie skąd dane pochodzą (Room, API, cache). Łatwa podmiana implementacji.
+
+**Q: Jak działa Room?**
+A: Biblioteka ORM od Google. `@Entity` = tabela, `@Dao` = zapytania SQL jako interfejs, `@Database` = punkt dostępu. KSP generuje implementacje w czasie kompilacji.
+
+**Q: Dlaczego hashujemy hasła?**
+A: SHA-256 w `HashUtils` – gdyby ktoś odczytał bazę SQLite z urządzenia, nie zobaczy haseł w postaci jawnej.
+
+**Q: Co to `sealed class AuthState`?**
+A: Ograniczony zestaw możliwych stanów – kompilator wymusza obsługę wszystkich przypadków w `when`. Bezpieczniejsze niż enum bo może mieć dane (np. `Error(message)`).
+
+**Q: Co to `StateFlow` vs `LiveData`?**
+A: `StateFlow` to Kotlin Coroutines, działa z `collectAsState()` w Compose. `LiveData` to starsze API Androida, mniej idiomatyczne z Compose.
+
+**Q: Jak działa seedowanie bazy?**
+A: `SeedCallback` w `BikeRentDatabase` – przy każdym otwarciu bazy wstawia wstępne dane (rowery, sklepy, adminów) z `DataSource`. `IGNORE` conflict strategy – nie nadpisuje istniejących.
+
+**Q: Co to animacja przejść?**
+A: `BikeTransitionOverlay` – `AnimatedVisibility` nad `NavHost`. Przy każdej zmianie `currentBackStackEntry` ustawiany jest `showTransition = true` na 500 ms. Overlay rysuje `Icons.Filled.DirectionsBike` ze spinning Canvas na kołach.
+
+**Q: Skąd awatar użytkownika?**
+A: Wybierany przez `ActivityResultContracts.GetContent()`, kopiowany do `filesDir/`, URI zapisywane do kolumny `avatarUri` w tabeli `users` (DB v3). Ładowany przez Coil jako `File(uri)`.

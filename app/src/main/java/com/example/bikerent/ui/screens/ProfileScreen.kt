@@ -1,5 +1,6 @@
 package com.example.bikerent.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -38,14 +39,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.example.bikerent.data.util.ImageUtils
 import com.example.bikerent.navigation.Screen
 import com.example.bikerent.ui.components.BottomNavBar
+import com.example.bikerent.ui.components.ScreenHeader
 import com.example.bikerent.ui.theme.Green800
 import com.example.bikerent.ui.theme.Red700
 import com.example.bikerent.viewmodel.AppViewModel
@@ -71,15 +77,13 @@ fun ProfileScreen(
         if (isAdmin) add(Triple(Icons.Filled.AdminPanelSettings, "Panel administracyjny", Screen.Admin.route))
     }
 
+    val avatarUri = authViewModel.currentAvatarUri?.let { Uri.parse(it) }
+
     Scaffold(bottomBar = { BottomNavBar(navController) }) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp)) {
             item {
-                Surface(color = Green800, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)) {
-                    Column(modifier = Modifier.padding(16.dp, 40.dp, 16.dp, 40.dp)) {
-                        Text("Profil", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                ScreenHeader(title = "Profil")
             }
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -89,10 +93,19 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(shape = CircleShape, color = Green800, modifier = Modifier.size(96.dp)) {
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                    Text(userName.firstOrNull()?.toString() ?: "?",
-                                        color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                            if (avatarUri != null) {
+                                AsyncImage(
+                                    model = ImageUtils.imageModel(avatarUri.toString()),
+                                    contentDescription = "Avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(96.dp).clip(CircleShape)
+                                )
+                            } else {
+                                Surface(shape = CircleShape, color = Green800, modifier = Modifier.size(96.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Text(userName.firstOrNull()?.toString() ?: "?",
+                                            color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(12.dp))

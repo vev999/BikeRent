@@ -1,5 +1,9 @@
 package com.example.bikerent.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mail
@@ -39,13 +43,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.example.bikerent.data.util.ImageUtils
 import com.example.bikerent.ui.components.BottomNavBar
+import com.example.bikerent.ui.components.ScreenHeader
 import com.example.bikerent.ui.theme.Green100
 import com.example.bikerent.ui.theme.Green800
 import com.example.bikerent.viewmodel.AppViewModel
@@ -57,9 +67,20 @@ fun UserSettingsScreen(
     authViewModel: AuthViewModel,
     appViewModel: AppViewModel
 ) {
+    val context = LocalContext.current
     var editMode by remember { mutableStateOf(false) }
     var userName by remember { mutableStateOf(authViewModel.currentUserName) }
     var userEmail by remember { mutableStateOf(authViewModel.currentUserEmail) }
+    var avatarUri by remember { mutableStateOf<Uri?>(authViewModel.currentAvatarUri?.let { Uri.parse(it) }) }
+    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            val localPath = ImageUtils.copyToAppStorage(context, it, "avatars")
+            if (localPath != null) {
+                avatarUri = Uri.parse(localPath)
+                authViewModel.updateAvatarUri(localPath)
+            }
+        }
+    }
 
     val activeRentals by appViewModel.activeRentals.collectAsState()
     val rentalHistory by appViewModel.rentalHistory.collectAsState()
@@ -68,17 +89,7 @@ fun UserSettingsScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp)) {
             item {
-                Surface(color = Green800, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)) {
-                    Row(
-                        modifier = Modifier.padding(start = 4.dp, top = 40.dp, end = 16.dp, bottom = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć", tint = Color.White)
-                        }
-                        Text("Ustawienia konta", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                ScreenHeader(title = "Ustawienia konta", onBack = { navController.navigateUp() })
                 Spacer(Modifier.height(16.dp))
             }
 
@@ -91,10 +102,30 @@ fun UserSettingsScreen(
                         modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(shape = CircleShape, color = Green800, modifier = Modifier.size(80.dp)) {
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                    Text(userName.firstOrNull()?.toString() ?: "?",
-                                        color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clickable { avatarPicker.launch("image/*") },
+                                contentAlignment = Alignment.BottomEnd
+                            ) {
+                                if (avatarUri != null) {
+                                    AsyncImage(
+                                        model = ImageUtils.imageModel(avatarUri.toString()),
+                                        contentDescription = "Avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(80.dp).clip(CircleShape)
+                                    )
+                                } else {
+                                    Surface(shape = CircleShape, color = Green800, modifier = Modifier.size(80.dp)) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Text(userName.firstOrNull()?.toString() ?: "?",
+                                                color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                                Surface(color = Green800, shape = CircleShape, modifier = Modifier.size(26.dp)) {
+                                    Icon(Icons.Filled.CameraAlt, null, tint = Color.White,
+                                        modifier = Modifier.padding(4.dp))
                                 }
                             }
                             Spacer(Modifier.height(12.dp))

@@ -8,4 +8,5 @@ interface UserRepository {
     suspend fun findByEmail(email: String): UserEntity?
     suspend fun findById(id: Long): UserEntity?
     suspend fun updateUser(id: Long, name: String, email: String)
+    suspend fun updateAvatarUri(id: Long, uri: String?)
 }

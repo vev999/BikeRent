@@ -1,16 +1,24 @@
 package com.example.bikerent.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.bikerent.BikeRentApp
+import com.example.bikerent.ui.components.BikeTransitionOverlay
 import com.example.bikerent.ui.screens.AdminPanelScreen
 import com.example.bikerent.ui.screens.BikeDetailScreen
 import com.example.bikerent.ui.screens.HomeScreen
@@ -25,6 +33,7 @@ import com.example.bikerent.viewmodel.AuthState
 import com.example.bikerent.viewmodel.AuthViewModel
 import com.example.bikerent.viewmodel.AuthViewModelFactory
 import com.example.bikerent.viewmodel.AppViewModel
+import kotlinx.coroutines.delay
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
@@ -62,35 +71,48 @@ fun AppNavigation() {
         }
     }
 
-    NavHost(navController = navController, startDestination = Screen.Login.route) {
-        composable(Screen.Login.route) {
-            LoginScreen(navController = navController, authViewModel = authViewModel)
+    var showTransition by remember { mutableStateOf(false) }
+    val currentEntry by navController.currentBackStackEntryAsState()
+
+    LaunchedEffect(currentEntry) {
+        showTransition = true
+        delay(500)
+        showTransition = false
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(navController = navController, startDestination = Screen.Login.route) {
+            composable(Screen.Login.route) {
+                LoginScreen(navController = navController, authViewModel = authViewModel)
+            }
+            composable(Screen.Home.route) {
+                HomeScreen(navController = navController, appViewModel = appViewModel)
+            }
+            composable(Screen.BikeDetail.route) { backStackEntry ->
+                val bikeId = backStackEntry.arguments?.getString("bikeId") ?: return@composable
+                BikeDetailScreen(navController = navController, bikeId = bikeId, appViewModel = appViewModel)
+            }
+            composable(Screen.ShopProfile.route) { backStackEntry ->
+                val shopId = backStackEntry.arguments?.getString("shopId") ?: return@composable
+                ShopProfileScreen(navController = navController, shopId = shopId, appViewModel = appViewModel)
+            }
+            composable(Screen.Rentals.route) {
+                RentalsScreen(navController = navController, appViewModel = appViewModel)
+            }
+            composable(Screen.Profile.route) {
+                ProfileScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
+            }
+            composable(Screen.Settings.route) {
+                UserSettingsScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
+            }
+            composable(Screen.Admin.route) {
+                AdminPanelScreen(navController = navController, appViewModel = appViewModel)
+            }
+            composable(Screen.MyReviews.route) {
+                MyReviewsScreen(navController = navController, appViewModel = appViewModel)
+            }
         }
-        composable(Screen.Home.route) {
-            HomeScreen(navController = navController, appViewModel = appViewModel)
-        }
-        composable(Screen.BikeDetail.route) { backStackEntry ->
-            val bikeId = backStackEntry.arguments?.getString("bikeId") ?: return@composable
-            BikeDetailScreen(navController = navController, bikeId = bikeId, appViewModel = appViewModel)
-        }
-        composable(Screen.ShopProfile.route) { backStackEntry ->
-            val shopId = backStackEntry.arguments?.getString("shopId") ?: return@composable
-            ShopProfileScreen(navController = navController, shopId = shopId, appViewModel = appViewModel)
-        }
-        composable(Screen.Rentals.route) {
-            RentalsScreen(navController = navController, appViewModel = appViewModel)
-        }
-        composable(Screen.Profile.route) {
-            ProfileScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
-        }
-        composable(Screen.Settings.route) {
-            UserSettingsScreen(navController = navController, authViewModel = authViewModel, appViewModel = appViewModel)
-        }
-        composable(Screen.Admin.route) {
-            AdminPanelScreen(navController = navController, appViewModel = appViewModel)
-        }
-        composable(Screen.MyReviews.route) {
-            MyReviewsScreen(navController = navController, appViewModel = appViewModel)
-        }
+
+        BikeTransitionOverlay(visible = showTransition)
     }
 }

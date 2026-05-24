@@ -1,7 +1,8 @@
 package com.example.bikerent.ui.screens
 
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.media.MediaPlayer
+import android.net.Uri
+import android.widget.VideoView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,10 +56,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.example.bikerent.R
 import coil3.compose.AsyncImage
 import com.example.bikerent.data.Review
 import com.example.bikerent.data.util.ImageUtils
@@ -84,6 +88,7 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
     var reviewRating by remember { mutableFloatStateOf(0f) }
     var reviewComment by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
     val currentUserId = appViewModel.getCurrentUserId()
     val hasReviewed = reviews.any { it.userId == currentUserId }
     val avgRating = if (reviews.isEmpty()) 0f
@@ -164,8 +169,9 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(
                                     onClick = {
-                                        ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                                            .startTone(ToneGenerator.TONE_PROP_BEEP2, 500)
+                                        val mp = MediaPlayer.create(context, R.raw.bike_bell)
+                                        mp.setOnCompletionListener { it.release() }
+                                        mp.start()
                                     },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp)
@@ -204,6 +210,38 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                                     fontSize = 16.sp, fontWeight = FontWeight.SemiBold
                                 )
                             }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Video section
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(3.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Film promocyjny", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(12.dp))
+                            AndroidView(
+                                factory = { ctx ->
+                                    VideoView(ctx).apply {
+                                        val uri = Uri.parse(
+                                            "android.resource://${ctx.packageName}/${R.raw.bike_video}"
+                                        )
+                                        setVideoURI(uri)
+                                        val mc = android.widget.MediaController(ctx)
+                                        mc.setAnchorView(this)
+                                        setMediaController(mc)
+                                        requestFocus()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
                         }
                     }
 

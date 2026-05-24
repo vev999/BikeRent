@@ -6,11 +6,11 @@ import java.io.File
 
 object ImageUtils {
 
-    fun copyToAppStorage(context: Context, uri: Uri): String? {
+    fun copyToAppStorage(context: Context, uri: Uri, folder: String = "bike_images"): String? {
         return try {
-            val dir = File(context.filesDir, "bike_images")
+            val dir = File(context.filesDir, folder)
             dir.mkdirs()
-            val fileName = "bike_${System.currentTimeMillis()}.jpg"
+            val fileName = "${folder}_${System.currentTimeMillis()}.jpg"
             val destFile = File(dir, fileName)
             context.contentResolver.openInputStream(uri)?.use { input ->
                 destFile.outputStream().use { output -> input.copyTo(output) }

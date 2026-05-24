@@ -14,14 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.bikerent.ui.theme.Green800
+import com.example.bikerent.ui.components.ScreenHeader
 import com.example.bikerent.viewmodel.AppViewModel
 
 @Composable
@@ -46,17 +43,7 @@ fun MyReviewsScreen(navController: NavController, appViewModel: AppViewModel) {
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
-                Surface(color = Green800, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)) {
-                    Row(
-                        modifier = Modifier.padding(start = 4.dp, top = 40.dp, end = 16.dp, bottom = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć", tint = Color.White)
-                        }
-                        Text("Moje oceny", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                ScreenHeader(title = "Moje oceny", onBack = { navController.popBackStack() })
                 Spacer(Modifier.height(16.dp))
             }
 

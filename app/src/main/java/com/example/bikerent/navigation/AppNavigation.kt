@@ -27,6 +27,7 @@ import com.example.bikerent.ui.screens.MyReviewsScreen
 import com.example.bikerent.ui.screens.ProfileScreen
 import com.example.bikerent.ui.screens.RentalsScreen
 import com.example.bikerent.ui.screens.ShopProfileScreen
+import com.example.bikerent.ui.screens.UserProfileScreen
 import com.example.bikerent.ui.screens.UserSettingsScreen
 import com.example.bikerent.viewmodel.AppViewModelFactory
 import com.example.bikerent.viewmodel.AuthState
@@ -49,6 +50,9 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object Admin : Screen("admin")
     object MyReviews : Screen("my_reviews")
+    object UserProfile : Screen("user_profile/{userId}") {
+        fun createRoute(userId: Long) = "user_profile/$userId"
+    }
 }
 
 @Composable
@@ -110,6 +114,10 @@ fun AppNavigation() {
             }
             composable(Screen.MyReviews.route) {
                 MyReviewsScreen(navController = navController, appViewModel = appViewModel)
+            }
+            composable(Screen.UserProfile.route) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: return@composable
+                UserProfileScreen(navController = navController, userId = userId, appViewModel = appViewModel)
             }
         }
 

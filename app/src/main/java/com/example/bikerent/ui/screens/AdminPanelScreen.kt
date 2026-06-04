@@ -205,7 +205,7 @@ fun AdminPanelScreen(navController: NavController, appViewModel: AppViewModel) {
                             Spacer(Modifier.weight(0.8f))
                         }
                         HorizontalDivider()
-                        bikes.take(5).forEach { bike ->
+                        bikes.forEach { bike ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(bike.name, modifier = Modifier.weight(2f), fontSize = 13.sp)
                                 Text("${bike.price} zł", modifier = Modifier.weight(1f), fontSize = 13.sp)

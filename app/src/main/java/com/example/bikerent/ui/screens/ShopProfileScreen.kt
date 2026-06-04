@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,10 +49,14 @@ import com.example.bikerent.viewmodel.AppViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel: AppViewModel) {
+    val context = LocalContext.current
     val shops by appViewModel.shops.collectAsState()
     val bikes by appViewModel.bikes.collectAsState()
     val shop = shops.find { it.id == shopId } ?: return
     val shopBikes = bikes.filter { it.id in shop.bikeIds }
+    val ratedBikes = shopBikes.filter { it.rating > 0f }
+    val shopRating = if (ratedBikes.isEmpty()) shop.rating
+    else Math.round(ratedBikes.map { it.rating.toDouble() }.average() * 10) / 10.0
 
     Scaffold(
         topBar = {
@@ -69,7 +74,7 @@ fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 AsyncImage(
-                    model = ImageUtils.imageModel(shop.image), contentDescription = shop.name,
+                    model = ImageUtils.imageModel(context, shop.image), contentDescription = shop.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().height(250.dp)
                 )
@@ -86,7 +91,7 @@ fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(shop.rating.toString(), color = Color(0xFF666666))
+                                Text(shopRating.toString(), color = Color(0xFF666666))
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.Top) {
@@ -113,7 +118,7 @@ fun ShopProfileScreen(navController: NavController, shopId: String, appViewModel
                 ) {
                     Row(modifier = Modifier.height(120.dp)) {
                         AsyncImage(
-                            model = ImageUtils.imageModel(bike.image), contentDescription = bike.name,
+                            model = ImageUtils.imageModel(context, bike.image), contentDescription = bike.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.width(120.dp)
                                 .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))

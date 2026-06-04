@@ -110,7 +110,7 @@ fun UserSettingsScreen(
                             ) {
                                 if (avatarUri != null) {
                                     AsyncImage(
-                                        model = ImageUtils.imageModel(avatarUri.toString()),
+                                        model = ImageUtils.imageModel(context, avatarUri.toString()),
                                         contentDescription = "Avatar",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.size(80.dp).clip(CircleShape)

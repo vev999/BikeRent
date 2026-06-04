@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,11 +64,15 @@ fun ProfileScreen(
     authViewModel: AuthViewModel,
     appViewModel: AppViewModel
 ) {
+    val context = LocalContext.current
     val userName = authViewModel.currentUserName
     val userEmail = authViewModel.currentUserEmail
     val activeRentals by appViewModel.activeRentals.collectAsState()
     val rentalHistory by appViewModel.rentalHistory.collectAsState()
+    val userReviews by appViewModel.userReviews.collectAsState()
     val totalRentals = activeRentals.size + rentalHistory.size
+    val avgRating = if (userReviews.isEmpty()) null
+    else Math.round(userReviews.map { it.rating }.average() * 10) / 10.0
 
     val isAdmin = authViewModel.isAdmin
     val menuItems = buildList {
@@ -95,7 +100,7 @@ fun ProfileScreen(
                             horizontalAlignment = Alignment.CenterHorizontally) {
                             if (avatarUri != null) {
                                 AsyncImage(
-                                    model = ImageUtils.imageModel(avatarUri.toString()),
+                                    model = ImageUtils.imageModel(context, avatarUri.toString()),
                                     contentDescription = "Avatar",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.size(96.dp).clip(CircleShape)
@@ -119,8 +124,11 @@ fun ProfileScreen(
                                 }
                                 VerticalDivider(modifier = Modifier.height(40.dp))
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                    Text("4.8", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Green800)
-                                    Text("Ocena", fontSize = 12.sp, color = Color(0xFF666666))
+                                    Text(
+                                        if (avgRating != null) avgRating.toString() else "—",
+                                        fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Green800
+                                    )
+                                    Text("Śr. ocena", fontSize = 12.sp, color = Color(0xFF666666))
                                 }
                             }
                         }

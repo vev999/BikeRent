@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,6 +122,7 @@ fun HomeScreen(navController: NavController, appViewModel: AppViewModel) {
 
 @Composable
 fun BikeCard(bike: Bike, onClick: () -> Unit) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
@@ -129,7 +131,7 @@ fun BikeCard(bike: Bike, onClick: () -> Unit) {
     ) {
         Column {
             AsyncImage(
-                model = ImageUtils.imageModel(bike.image), contentDescription = bike.name,
+                model = ImageUtils.imageModel(context, bike.image), contentDescription = bike.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth().height(200.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))

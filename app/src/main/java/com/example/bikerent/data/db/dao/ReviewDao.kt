@@ -11,6 +11,9 @@ interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(review: ReviewEntity)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(reviews: List<ReviewEntity>)
+
     @Query("SELECT * FROM reviews WHERE bikeId = :bikeId ORDER BY date DESC")
     suspend fun getAllForBike(bikeId: String): List<ReviewEntity>
 

@@ -21,6 +21,19 @@ object ImageUtils {
         }
     }
 
-    /** Zwraca File dla ścieżek lokalnych (zaczynają się od '/'), URL jako String. */
-    fun imageModel(path: String): Any = if (path.startsWith("/")) File(path) else path
+    /**
+     * Zwraca:
+     *  - File dla ścieżek bezwzględnych (avatar użytkownika z pamięci wewnętrznej)
+     *  - @DrawableRes Int dla zasobów android.resource:// (lokalne drawable) — Coil3 ładuje po ID
+     *  - String dla zewnętrznych URL-i (fallback)
+     */
+    fun imageModel(context: Context, path: String): Any = when {
+        path.startsWith("/") -> File(path)
+        path.startsWith("android.resource://") -> {
+            val resName = path.substringAfterLast("/")
+            val id = context.resources.getIdentifier(resName, "drawable", context.packageName)
+            if (id != 0) id else path
+        }
+        else -> path
+    }
 }

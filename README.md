@@ -1,30 +1,28 @@
 # BikeRent
 
-BikeRent to aplikacja mobilna na Androida do wypożyczania rowerów. Projekt jest napisany w Kotlinie, używa Jetpack Compose do interfejsu i zachowuje architekturę MVVM z Repository Pattern.
+BikeRent to aplikacja mobilna na Androida do wypożyczania rowerów. Projekt napisany w Kotlinie, używa Jetpack Compose do interfejsu i zachowuje architekturę MVVM z Repository Pattern.
 
-Aplikacja działa lokalnie na bazie Room. Zewnętrzny backend (np. AWS) jest planowany, ale jeszcze nie podłączony.
+Aplikacja działa lokalnie na bazie Room.
 
 ## Funkcje
 
-- przeglądanie dostępnych rowerów z wyszukiwaniem i filtrowaniem po kategorii,
-- podgląd szczegółów roweru — karuzela zdjęć, opis, cena, ocena, film promocyjny (VideoView), dzwonek (MediaPlayer),
-- podgląd profilu wypożyczalni,
-- rejestracja i logowanie przez e-mail i hasło,
-- hashowanie haseł SHA-256,
-- wypożyczanie roweru i śledzenie czasu w czasie rzeczywistym,
-- zwrot roweru — czas trwania i koszt obliczane na podstawie rzeczywistego czasu wypożyczenia,
-- historia wypożyczeń z datą, czasem trwania i kosztem,
-- dodawanie ocen i komentarzy do rowerów (1–5 gwiazdek),
-- dynamicznie obliczana średnia ocena roweru,
-- podgląd własnych ocen w profilu użytkownika,
-- profil użytkownika z awatarem (wybór zdjęcia z urządzenia) i statystykami,
-- edycja danych konta,
-- panel administratora z zarządzaniem rowerami i moderacją opinii,
-- dodawanie nowych rowerów przez administratora (nazwa, opis, cena, kategoria, sklep, zdjęcie),
-- wybór zdjęcia z urządzenia — plik jest kopiowany do lokalnego magazynu aplikacji,
-- usuwanie opinii przez administratora z potwierdzeniem,
-- dostęp do panelu administratora ograniczony tylko do konta admina,
-- animacja przejścia między ekranami — logo BikeRent z kręcącymi się kołami (500 ms).
+- przeglądanie dostępnych rowerów z wyszukiwaniem i filtrowaniem po kategorii
+- podgląd szczegółów roweru — karuzela zdjęć, opis, cena, ocena, film promocyjny (VideoView), dzwonek (MediaPlayer)
+- podgląd profilu sklepu z dynamicznie obliczaną oceną na podstawie ocen jego rowerów
+- rejestracja i logowanie przez e-mail i hasło (hasła przechowywane jako SHA-256)
+- wypożyczanie roweru i śledzenie czasu w czasie rzeczywistym
+- zwrot roweru — czas trwania i koszt obliczane na podstawie rzeczywistego czasu wypożyczenia
+- historia wypożyczeń z datą, czasem trwania i kosztem
+- dodawanie ocen i komentarzy do rowerów (1–5 gwiazdek)
+- dynamicznie obliczana średnia ocena roweru
+- przeglądanie profilu innych użytkowników przez kliknięcie na ich recenzję
+- profil użytkownika z awatarem (wybór zdjęcia z urządzenia), statystykami i listą wystawionych ocen
+- edycja danych konta
+- panel administratora: zarządzanie rowerami, moderacja opinii
+- dodawanie nowych rowerów przez administratora (nazwa, opis, cena, kategoria, sklep, zdjęcie z urządzenia)
+- usuwanie opinii przez administratora z potwierdzeniem
+- dostęp do panelu administratora ograniczony do konta admina
+- animacja przejścia między ekranami — logo BikeRent z kręcącymi się kołami (500 ms)
 
 ## Technologie
 
@@ -33,10 +31,10 @@ Aplikacja działa lokalnie na bazie Room. Zewnętrzny backend (np. AWS) jest pla
 - Material 3
 - Navigation Compose 2.9.0
 - MVVM + Repository Pattern
-- Room 2.8.4 (baza lokalna SQLite)
+- Room 2.8.4 (lokalna baza SQLite)
 - KSP 2.3.2
 - Kotlin Coroutines i StateFlow
-- Coil 3.1.0 (ładowanie zdjęć — URL i lokalne pliki)
+- Coil 3.1.0 (ładowanie zdjęć — drawable i lokalne pliki)
 - Activity Compose 1.10.1 (file picker)
 - Gradle Version Catalog
 
@@ -77,100 +75,43 @@ Na Windowsie:
 gradlew.bat assembleDebug
 ```
 
-Testy jednostkowe:
-
-```bash
-./gradlew testDebugUnitTest
-```
-
 ## Dane startowe
 
-Przy pierwszym utworzeniu lokalnej bazy Room aplikacja seeduje:
+Przy pierwszym uruchomieniu aplikacja seeduje lokalną bazę Room:
 
-- 12 rowerów (4 sklepy),
-- 4 sklepy,
-- konto administratora.
+- 12 rowerów w 4 sklepach
+- 4 sklepy
+- 3 konta użytkowników
+- 10 startowych recenzji
 
-Konto administratora:
+**Konta:**
 
-- e-mail: `admin@bikerent.local`
-- hasło: `Admin123!`
-
-Hasło w kodzie jest przechowywane wyłącznie jako hash SHA-256 w `DataSource.kt`.
-
-Nie seedujemy zwykłych kont użytkowników, opinii ani historii wypożyczeń.
-
-Użytkownicy tworzeni przez ekran rejestracji są zapisywani lokalnie w Room.
+| E-mail | Hasło | Rola |
+|--------|-------|------|
+| `admin@bikerent.local` | `Admin123!` | Administrator |
+| `anna.k@mail.com` | `rower2024` | Użytkownik |
+| `pawel.n@mail.com` | `haslo123` | Użytkownik |
 
 ## Multimedia
 
 Zasoby multimedialne (`app/src/main/res/raw/`):
 
-- `bike_bell.mp3` — dzwonek roweru (~19 KB), odtwarzany przez `MediaPlayer` po naciśnięciu przycisku „Dzwonek" w szczegółach roweru.
+- `bike_bell.mp3` — dzwonek roweru (~19 KB), odtwarzany przez `MediaPlayer` po naciśnięciu „Dzwonek" w szczegółach roweru.
 - `bike_video.mp4` — film promocyjny (~846 KB), odtwarzany przez `VideoView` w sekcji „Film promocyjny". Film startuje wstrzymany — użytkownik klika play samodzielnie.
 
-## Zdjęcia rowerów
+## Zdjęcia
 
-Zdjęcia seedowanych rowerów są pobierane z URL-i Unsplash — wymaga połączenia z internetem.
+Zdjęcia seedowanych rowerów i sklepów są bundlowane w APK jako zasoby drawable (`res/drawable-nodpi/*.jpg`) — działają bez połączenia z internetem.
 
-Zdjęcia rowerów dodanych przez administratora są kopiowane z urządzenia do wewnętrznego magazynu aplikacji (`filesDir/bike_images/`) i ładowane lokalnie przez Coil bez dostępu do sieci.
+Zdjęcia rowerów dodanych przez administratora są kopiowane z urządzenia do wewnętrznego magazynu aplikacji (`filesDir/bike_images/`) i ładowane lokalnie przez Coil.
 
-## Struktura projektu
+## Struktura projektu i architektura
 
-```text
-BikeRent/
-├── app/
-│   ├── build.gradle.kts
-│   └── src/
-│       ├── main/
-│       │   ├── AndroidManifest.xml
-│       │   ├── java/com/example/bikerent/
-│       │   │   ├── BikeRentApp.kt
-│       │   │   ├── MainActivity.kt
-│       │   │   ├── data/
-│       │   │   ├── navigation/
-│       │   │   ├── ui/
-│       │   │   └── viewmodel/
-│       │   └── res/
-│       ├── androidTest/
-│       └── test/
-├── gradle/
-├── build.gradle.kts
-├── gradle.properties
-├── settings.gradle.kts
-├── ARCHITEKTURA.md
-├── BAZA_DANYCH.md
-├── PROJECT_STRUCTURE.md
-└── README.md
-```
+Opis warstw, ekranów, bazy danych, repozytoriów i przepływów danych: [ARCHITEKTURA.md](ARCHITEKTURA.md)
 
-Pełny opis warstw, bazy danych, repozytoriów i przepływów danych znajduje się w `PROJECT_STRUCTURE.md`.
+Szczegółowy opis tabel i seedowania bazy: [BAZA_DANYCH.md](BAZA_DANYCH.md)
 
-## Architektura
-
-```text
-UI → ViewModel → Repository → DAO → Room
-```
-
-ViewModele nie odwołują się bezpośrednio do Room. Korzystają z interfejsów repozytoriów, dzięki czemu późniejsze przejście na zewnętrzne API powinno wymagać głównie wymiany implementacji repozytoriów.
-
-## Lokalna baza danych
-
-Nazwa bazy: `bikerent.db`
-Wersja: `3`
-
-Tabele:
-
-- `users` (z kolumną `avatarUri` od wersji 3)
-- `bikes`
-- `shops`
-- `active_rentals`
-- `rental_history`
-- `reviews`
-
-Hasła użytkowników są zapisywane w tabeli `users` jako `passwordHash` (SHA-256).
-
-## Pliki lokalne i Git
+## Lokalne pliki i Git
 
 Do repozytorium nie trafiają pliki generowane przez Android Studio i Gradle:
 

@@ -48,6 +48,9 @@ class AppViewModel(
     private val _allReviews = MutableStateFlow<List<Review>>(emptyList())
     val allReviews: StateFlow<List<Review>> = _allReviews.asStateFlow()
 
+    private val _viewedUserReviews = MutableStateFlow<List<Review>>(emptyList())
+    val viewedUserReviews: StateFlow<List<Review>> = _viewedUserReviews.asStateFlow()
+
     private var currentUserId: Long = -1L
     private var currentUserName: String = ""
 
@@ -142,6 +145,12 @@ class AppViewModel(
     fun loadAllReviews() {
         viewModelScope.launch {
             _allReviews.value = reviewRepository.getAllReviews()
+        }
+    }
+
+    fun loadReviewsForUser(userId: Long) {
+        viewModelScope.launch {
+            _viewedUserReviews.value = reviewRepository.getReviewsForUser(userId)
         }
     }
 

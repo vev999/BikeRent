@@ -5,6 +5,8 @@ import android.net.Uri
 import android.widget.VideoView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,7 +118,7 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                 Box {
                     HorizontalPager(state = pagerState) { page ->
                         AsyncImage(
-                            model = ImageUtils.imageModel(bike.images[page]), contentDescription = bike.name,
+                            model = ImageUtils.imageModel(context, bike.images[page]), contentDescription = bike.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxWidth().height(300.dp)
                         )
@@ -305,7 +307,7 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
                                 Text("Brak opinii. Bądź pierwszą osobą!", color = Color(0xFF666666))
                             } else {
                                 reviews.forEachIndexed { index, review ->
-                                    ReviewItem(review)
+                                    ReviewItem(review, navController)
                                     if (index < reviews.lastIndex)
                                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 }
@@ -351,8 +353,13 @@ fun BikeDetailScreen(navController: NavController, bikeId: String, appViewModel:
 }
 
 @Composable
-private fun ReviewItem(review: Review) {
-    Row(verticalAlignment = Alignment.Top) {
+private fun ReviewItem(review: Review, navController: NavController) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier
+            .clickable { navController.navigate(com.example.bikerent.navigation.Screen.UserProfile.createRoute(review.userId)) }
+            .padding(vertical = 2.dp)
+    ) {
         Surface(shape = CircleShape, color = Green800, modifier = Modifier.size(40.dp)) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Text(review.userName.first().toString(), color = Color.White, fontWeight = FontWeight.Bold)

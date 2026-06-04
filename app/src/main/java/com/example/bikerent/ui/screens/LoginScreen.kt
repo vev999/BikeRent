@@ -89,7 +89,11 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFE8F5E9), Color.White)))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFF1A5C28), Color(0xFF2E7D32), Color(0xFF4CAF50))
+                )
+            )
     ) {
         Column(
             modifier = Modifier
